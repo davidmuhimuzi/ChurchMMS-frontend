@@ -73,7 +73,7 @@ export default {
         if (process.env.NODE_ENV === "development") {
             this.path = "http://localhost:8080/images";
         } else {
-            this.path = "http://team3.eaglesoftwareteam.com/images";
+            this.path = "/images";
         }
     }
 };
