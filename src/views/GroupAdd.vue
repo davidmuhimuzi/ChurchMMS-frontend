@@ -1,26 +1,26 @@
 <template>
   <div class="submit-form mt-3 mx-auto">
-    <h1>Add a family</h1>
+    <h1>Add a Group</h1>
 
-    <form @submit.prevent="saveFamily">
+    <form @submit.prevent="saveGroup">
 
       <v-text-field
-        v-model="family.fam_name"
-        label="Family Name"
+        v-model="group.grp_name"
+        label="Group Name"
         required
       ></v-text-field>
 
       <v-card>
         <v-data-table
           :headers="headers"
-          :items="familyPersons"
+          :items="groupMembers"
           hide-default-footer
           >
           <template v-slot:top>
             <v-toolbar
               flat
             >
-              <v-toolbar-title>Family Members</v-toolbar-title>
+              <v-toolbar-title>Group Members</v-toolbar-title>
               <v-divider
                 class="mx-4"
                 inset
@@ -39,12 +39,12 @@
                     v-bind="attrs"
                     v-on="on"
                   >
-                    Add Member
+                    Add Group Member
                   </v-btn>
                 </template>
                 <v-card>
                   <v-card-title>
-                    <span>New Family Member</span>
+                    <span>New Group Member</span>
                   </v-card-title>
 
                   <v-card-text>
@@ -52,9 +52,9 @@
                       <v-row justify="center" align="center">
                         <v-col justify="left" col="1"> 
                             <v-autocomplete
-                                v-model="familyPerson.per_ID"
+                                v-model="groupMember.per_ID"
                                 :items="people"
-                                label="Family Member"
+                                label="Group"
                                 item-value="per_ID"
                                 :filter="customFilter"
                               >
@@ -64,12 +64,13 @@
                                 <template slot="item" slot-scope="data" >
                                   {{data.item.frst_name}} {{data.item.last_name}}
                                 </template>
+                                <!-- TO DO ADD DISPLAY CONTACT -->
                               </v-autocomplete>
                         </v-col>
                         <v-col justify="left" col="2"> 
                             <v-text-field
-                              v-model="familyPerson.fam_role"
-                              label="Family Role"
+                              v-model="groupMember.grp_role"
+                              label="Role in Group"
                               required
                             ></v-text-field>
                         </v-col>
@@ -89,7 +90,7 @@
                     <v-btn
                       color="blue darken-1"
                       text
-                      @click="addPersonForTable()"
+                      @click="addMemberForTable()"
                     >
                       Save
                     </v-btn>
@@ -100,14 +101,14 @@
           </template>
           <template v-slot: item.head="{ item }">
             <v-radio-group
-              v-model="family.per_ID"
+              v-model="group.per_ID"
               name="rowSelector">
               <v-radio :value="item.person.per_ID"/>
             </v-radio-group>
           </template>
           <template v-slot: item.actions="{ item }">
               <v-icon
-                @click="deletePersonForFamily(item)"
+                @click="deletePersonForGroup(item)"
               >
                 mdi-delete
               </v-icon>
@@ -124,7 +125,7 @@
         </v-btn>
       </v-col>
       <v-col justify="right" col="2"> 
-        <v-btn class= "float-right" color="success" @click="saveFamily">
+        <v-btn class= "float-right" color="success" @click="saveGroup">
           Save
         </v-btn>
       </v-col>
@@ -133,18 +134,18 @@
 </template>
 
 <script>
-import FamilyService from "../services/FamilyService";
+import GroupDataServices from "../services/GroupDataService.js";
 import PersonDataService from "../services/PersonDataService";
-import FamilyPersonService from "../services/FamilyPersonService";
+import GroupMemberService from "../services/GroupMemberService";
 
 export default {
   data() {
     return {
       dialog: false,
-      family: {},
-      familyPersons: [],
+      group: {},
+      groupMembers: [],
       people: [],
-      familyPerson: {},
+      groupMember: {},
       message: '',
       headers: [
                 {
@@ -158,9 +159,9 @@ export default {
                     value: 'person.last_name',
                 },
                 {
-                    text: 'Family Role',
+                    text: 'Group Role',
                     align: 'left',
-                    value: 'fam_role',
+                    value: 'grp_role',
                 },
                 {
                     text: 'Action',
@@ -172,16 +173,16 @@ export default {
     };
   },
   methods: {
-    saveFamily() {
-      console.log(this.family)
-      FamilyService.create(this.family)
+    saveGroup() {
+      console.log(this.group)
+      GroupDataServices.create(this.group)
         .then(response => {
-          console.log(response.data.fam_ID)
-          this.familyPersons.forEach(familyPerson => {
-            familyPerson.fam_ID = response.data.fam_ID;
-            this.addPersonForFamily(familyPerson)
+          console.log(response.data.grp_ID)
+          this.groupMembers.forEach(groupMember => {
+            groupMember.grp_ID = response.data.grp_ID;
+            this.addMemberForGroup(groupMember)
           })
-          this.$router.push({ name: "familieslist" });
+          this.$router.push({ name: "groupdisplay" });
         })
         .catch((e) => {
           console.log(e);
@@ -189,7 +190,7 @@ export default {
     },
 
     cancel() {
-      this.$router.push({ name: "familieslist" });
+      this.$router.push({ name: "groupdisplay" });
     },
 
     getPeople() {
@@ -203,12 +204,12 @@ export default {
         });
     },
 
-    deletePersonForFamily(familyperson) {
-      this.familyPersons = this.familyPersons.filter(familyPerson => familyPerson.fp_ID!=familyperson.fp_ID);
+    deletePersonForGroup(groupmember) {
+      this.groupMembers = this.groupMembers.filter(groupMember => groupMember.grp_ID!=groupmember.grp_ID);
     },
 
-    addPersonForFamily(familyPerson) {
-        FamilyPersonService.create(familyPerson)
+    addMemberForGroup(groupMember) {
+        GroupMemberService.create(groupMember)
           .then(() => {
           })
           .catch(error => {
@@ -216,17 +217,17 @@ export default {
           });
     },
 
-    addPersonForTable() {
+    addMemberForTable() {
       this.dialog = false;
-      let familyPerson = {};
-      familyPerson.per_ID = this.familyPerson.per_ID;
-      familyPerson.fam_role = this.familyPerson.fam_role;
+      let groupMember = {};
+      groupMember.per_ID = this.groupMember.per_ID;
+      groupMember.grp_role = this.groupMember.grp_role;
 
-      PersonDataService.get(this.familyPerson.per_ID)
+      PersonDataService.get(this.groupMember.per_ID)
         .then(response => {
-          familyPerson.person = response.data;
-          console.log(familyPerson)
-          this.familyPersons.push(familyPerson)
+          groupMember.person = response.data;
+          console.log(groupMember)
+          this.groupMembers.push(groupMember)
         })
         .catch(e => {
           console.log(e);
