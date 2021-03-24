@@ -20,7 +20,7 @@
         </template>
       </v-select>
 
-      <v-data-table
+     <v-data-table
         :headers="headers"
         :items="familyPersons"
         hide-default-footer
@@ -35,6 +35,7 @@
             </v-icon>
         </template>
       </v-data-table>
+    
 
       <v-row justify="center" align="center">
         <v-col justify="left" col="1"> 
