@@ -92,6 +92,36 @@ export const router = new Router({
       component: () => import("./views/PersonAdd")
     },
     {
+    path: "/vvg",
+    name: "vvglist",
+    component: () => import("./views/VvgList")
+  },
+  {
+    path: "/vvgedit",
+    name: "vvg-edit",
+    component: () => import("./views/VvgEdit")
+  },
+  {
+    path: "/vvgadd",
+    name: "vvgadd",
+    component: () => import("./views/VvgAdd")
+  },
+  {
+  path: "/vve",
+  name: "vvelist",
+  component: () => import("./views/VveList")
+},
+{
+  path: "/vvgedit",
+  name: "vve-edit",
+  component: () => import("./views/VveEdit")
+},
+{
+  path: "/vveadd",
+  name: "vveadd",
+  component: () => import("./views/VveAdd")
+},
+    {
       path: "/congregation",
       name: "congregationdisplay",
       component: Congregation_Display
