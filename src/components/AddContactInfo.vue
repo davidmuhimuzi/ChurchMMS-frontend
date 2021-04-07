@@ -73,15 +73,13 @@
 </template>
 
 <script>
-import CommunicationService from "../services/CommunicationService";
-import PersonContactService from "../services/PersonContactService";
+
 
 export default {
 	name: 'ContactInfo',
-    props: ['person'],
+    props: ['personContacts'],
     data() {
         return {
-            personContacts: [],
             emails: [],
             phones: [],
             addresses: [],
@@ -104,7 +102,7 @@ export default {
                         {
                             text: 'Email Address',
                             align: 'left',
-                            value: 'communication.address',
+                            value: 'address',
                             sortable: false,
                         },
                         {
@@ -118,7 +116,7 @@ export default {
                         {
                             text: 'Phone Number',
                             align: 'left',
-                            value: 'communication.number',
+                            value: 'number',
                             sortable: false,
                         },
                         {
@@ -133,86 +131,35 @@ export default {
     },
     
 	methods: {
-
-		getPersonContacts(per_ID) {
-        PersonContactService.getAll(per_ID)
-            .then(response => {
-                this.personContacts = response.data;
-                this.emails = this.personContacts.filter(personContact => personContact.communication.vvg_ID == 1 & personContact.communication.vve_ID == 1);
-                this.phones = this.personContacts.filter(personContact => personContact.communication.vvg_ID == 1 & personContact.communication.vve_ID == 2);
-                this.addresses = this.personContacts.filter(personContact => personContact.communication.vvg_ID == 1 & personContact.communication.vve_ID == 3);
-            })
-            .catch(e => {
-                console.log(e);
-            });
-        },
         addEmail() {
-            this.currentEmail.vvg_ID = 1;
-            this.currentEmail.vve_ID = 1;
-            this.currentEmail.number = 0;
-            CommunicationService.create(this.currentEmail)
-                .then(response => {
-                    let personContact = {com_ID : response.data.com_ID, per_ID : this.person.per_ID};
-                    PersonContactService.create(personContact)
-                    .then(response => {
-                        console.log(response.data);
-                        this.getPersonContacts(this.person.per_ID);
-                    })
-                    .catch(e => {
-                        console.log(e);
-                    });
-                    console.log(response.data);
-                    this.currentEmail = {};
-                })
-                .catch(e => {
-                    console.log(e);
-                });
+            let email = {}
+            email.address = this.currentEmail.address;
+            email.vvg_ID = 1;
+            email.vve_ID = 1;
+            email.number = "";
+            this.personContacts.push(email);
+            this.emails.push(email);
+            
         },
         deleteEmail(personcontact) {
-            PersonContactService.delete(personcontact.cpc_ID)
-            .then(() => {  
-                this.emails = this.emails.filter(email => email.cpc_ID!=personcontact.cpc_ID);
-            })
-            .catch(error => {
-                this.message = error.response.data.message;
-            });
+            this.personContacts = this.personContacts.filter(personContact => personContact.address!=personcontact.address);
+            this.emails = this.emails.filter(email => email.address!=personcontact.address);
+            this.currentEmail = {}
         },
         addPhone() {
-            this.currentPhone.vvg_ID = 1;
-            this.currentPhone.vve_ID = 2;
-            this.currentPhone.address = "";
-            CommunicationService.create(this.currentPhone)
-                .then(response => {
-                    let personContact = {com_ID : response.data.com_ID, per_ID : this.person.per_ID};
-                    PersonContactService.create(personContact)
-                    .then(response => {
-                        console.log(response.data);
-                        this.getPersonContacts(this.person.per_ID);
-                    })
-                    .catch(e => {
-                        console.log(e);
-                    });
-                    console.log(response.data);
-                    this.currentPhone = {};
-                })
-                .catch(e => {
-                    console.log(e);
-                }); 
+            let phone = {}
+            phone.number = this.currentPhone.number;
+            phone.vvg_ID = 1;
+            phone.vve_ID = 2;
+            phone.address = "";
+            this.personContacts.push(phone);
+            this.phones.push(phone);
+            
         },
         deletePhone(personcontact) {
-            PersonContactService.delete(personcontact.cpc_ID)
-            .then(() => {  
-                this.personContacts = this.personContacts.filter(personContact => personContact.cpc_ID!=personcontact.cpc_ID);
-                CommunicationService.delete(personcontact.com_ID)
-                .then(() => {  
-                })
-                .catch(error => {
-                    this.message = error.response.data.message;
-                });
-            })
-            .catch(error => {
-                this.message = error.response.data.message;
-            });
+            this.personContacts = this.personContacts.filter(personContact => personContact.number!=personcontact.number);
+            this.phones = this.phones.filter(phone => phone.number!=personcontact.number);
+            this.currentPhone = {}
         },
     },
     mounted() {
