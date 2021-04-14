@@ -1,51 +1,34 @@
 <template>
-  <div class="submit-form mt-3 mx-auto" data-app=“true>
-    <h1>Add a family</h1>
-
-    <form @submit.prevent="saveFamily">
-      
-      <v-file-input
-      v-model="selectedFile"
-      accept="image/png, image/jpeg, image/bmp"
-      prepend-icon="mdi-camera"
-      label="Family Photo"
-    ></v-file-input>
-
+  <div v-if="currentGroup" class="submit-form" data-app="true">
+      <v-form ref="form" lazy-validation>
+        
       <v-text-field
-        v-model="family.fam_name"
-        label="Family Name"
+        v-model="currentGroup.grp_name"
+        :rules="[(v) => !!v || 'Group name is required']"
+        label="Group's Name"
         required
       ></v-text-field>
-
+      
       <v-card>
         <v-data-table
           :headers="headers"
-          :items="familyPersons"
+          :items="groupMembers"
           hide-default-footer
           >
           <template v-slot:top>
             <v-toolbar
               flat
             >
-              <v-toolbar-title>Family Members</v-toolbar-title>
+              <v-toolbar-title>Group Members</v-toolbar-title>
               <v-divider
                 class="mx-4"
                 inset
                 vertical
               ></v-divider>
               <v-spacer></v-spacer>
-              <v-btn
-                    color="primary"
-                    dark
-                    class="mb-2"
-                    @click="addNewMember"
-                  >
-                    New Member
-              </v-btn>
-              <v-spacer></v-spacer>
               <v-dialog
                 v-model="dialog"
-                max-width="500px"
+                max-width="700px"
               >
                 <template v-slot:activator="{ on, attrs }">
                   <v-btn
@@ -55,12 +38,12 @@
                     v-bind="attrs"
                     v-on="on"
                   >
-                    Add Member
+                    Edit/Add Members
                   </v-btn>
                 </template>
                 <v-card>
                   <v-card-title>
-                    <span>New Family Member</span>
+                    <span>New Group Member</span>
                   </v-card-title>
 
                   <v-card-text>
@@ -68,11 +51,11 @@
                       <v-row justify="center" align="center">
                         <v-col justify="left" col="1"> 
                             <v-autocomplete
-                                v-model="familyPerson.per_ID"
+                                v-model="groupMember.per_ID"
                                 :items="people"
-                                label="Family Member"
+                                label="Group Member"
                                 item-value="per_ID"
-                                :filter="customFilter"
+                            
                               >
                                 <template slot="selection" slot-scope="data" >
                                   {{data.item.frst_name}} {{data.item.last_name}}
@@ -84,8 +67,8 @@
                         </v-col>
                         <v-col justify="left" col="2"> 
                             <v-text-field
-                              v-model="familyPerson.fam_role"
-                              label="Family Role"
+                              v-model="groupMember.grp_role"
+                              label="Group Role"
                               required
                             ></v-text-field>
                         </v-col>
@@ -105,7 +88,7 @@
                     <v-btn
                       color="blue darken-1"
                       text
-                      @click="addPersonForTable()"
+                      @click="addMemberForGroup()"
                     >
                       Save
                     </v-btn>
@@ -114,118 +97,123 @@
               </v-dialog>
             </v-toolbar>
           </template>
-          <template v-slot:item.head="{ item }">
-            <v-radio-group
-              v-model="family.per_ID"
-              name="rowSelector">
-              <div class="d-flex justify-center"><v-radio :value="item.person.per_ID"/></div>
-            </v-radio-group>
-          </template>
-          <template v-slot:item.actions="{ item }">
+          <template v-slot:[`item.actions`]="{ item }">
               <v-icon
-                @click="deletePersonForFamily(item)"
-              
+                @click="deletePersonForGroup(item)"
               >
                 mdi-delete
               </v-icon>
           </template>
         </v-data-table>
       </v-card>
-    </form>
+      <v-divider class="my-5"></v-divider>
 
-  <v-divider class="my-5"></v-divider>
-    <v-row justify="center">
-      <v-col justify="left" col="1"> 
-        <v-btn color="dark" @click="cancel">
-          Cancel
-        </v-btn>
-      </v-col>
-      <v-col justify="right" col="2"> 
-        <v-btn class= "float-right" color="dark" @click="saveFamily">
-          Save
-        </v-btn>
-      </v-col>
-    </v-row>
+      <v-row justify="center">
+        <v-col justify="left" col="1"> 
+          <v-btn color="dark" @click="deleteGroup">
+            Delete
+          </v-btn>
+        </v-col>
+        <v-col justify="right" col="2"> 
+          <v-btn class= "float-right" color="dark" @click="updateGroup">
+            Update
+          </v-btn>
+        </v-col>
+      </v-row>
+     </v-form>
+  </div>
+
+  <div v-else>
+    <br />
+    <p>Please click on a Group...</p>
+    
   </div>
 </template>
 
 <script>
-import FamilyService from "../services/FamilyService";
+import GroupDataServices from "../services/GroupDataService";
 import PersonDataService from "../services/PersonDataService";
-import FamilyPersonService from "../services/FamilyPersonService";
+import GroupMemberService from "../services/GroupMemberService";
 
 export default {
   data() {
     return {
-      selectedFile: [],
       dialog: false,
-      family: {},
-      familyPersons: [],
+      currentGroup: null,
+      groupMembers: [],
       people: [],
-      familyPerson: {},
+      groupMember: {},
       message: '',
       headers: [
                 {
                     text: 'Name',
                     align: 'left',
                     value: 'person.frst_name',
-                    sortable: false,
                 },
                 {
                     text: '',
                     align: 'left',
                     value: 'person.last_name',
-                    sortable: false,
                 },
                 {
                     text: 'Role',
                     align: 'left',
-                    value: 'fam_role',
-                    sortable: false,
-                },
+                    value: 'grp_role',
+                }, 
                 {
-                    text: 'Family Head',
-                    align: 'center',
-                    value: 'head',
-                    sortable: false,
-                },
-                {
-                    text: 'Action',
+                    text: 'Delete',
                     value: 'actions',
                     align: 'center',
                     sortable: false,
                 }
             ],
-    };
+    }
   },
+  
   methods: {
-    saveFamily() {
-      const formData = new FormData();
-      formData.append("file", this.selectedFile);
-      FamilyService.upload(formData)
-      .then(res => {
-        this.family.fam_pic = res.data.path;
-        FamilyService.create(this.family)
-          .then(response => {
-            console.log(response.data.fam_ID)
-            this.familyPersons.forEach(familyPerson => {
-              familyPerson.fam_ID = response.data.fam_ID;
-              this.addPersonForFamily(familyPerson)
-            })
-            this.$router.push({ name: "familieslist" });
-          })
-          .catch((e) => {
-            console.log(e);
-          });
-      })
-      .catch(err => {
-        console.log(err);
-      });
+    getGroup(grp_ID) {
+      GroupDataServices.get(grp_ID)
+        .then(response => {
+          this.currentGroup = response.data;
+          console.log(response.data);
+        })
+        .catch(e => {
+          console.log(e);
+        });
     },
 
+    updateGroup() {
+      GroupDataServices.update(this.currentGroup.grp_ID, this.currentGroup)
+        .then(response => {
+          console.log(response.data);
+          this.message = 'The Group was updated successfully!';
+          this.$router.push({ name: 'groupdisplay' });
+        })
+        .catch(e => {
+          console.log(e);
+        });
+   },
 
-    cancel() {
-      this.$router.push({ name: "familieslist" });
+    deleteGroup() {
+      GroupDataServices.delete(this.currentGroup.grp_ID)
+        .then(response => {
+          console.log(response.data);
+          this.$router.push({ name: "groupdisplay" });
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    
+    getPeopleForGroup(grp_ID)  {
+      GroupMemberService.getGroupMembers(grp_ID)
+        .then(response => {
+            this.groupMembers = response.data;
+            console.log(this.groupMembers);
+        })
+        .catch(error => {
+            this.message = error.response.data.message;
+        });
     },
 
     getPeople() {
@@ -239,44 +227,37 @@ export default {
         });
     },
 
-    deletePersonForFamily(familyperson) {
-      this.familyPersons = this.familyPersons.filter(familyPerson => familyPerson.fp_ID!=familyperson.fp_ID);
+    deletePersonForGroup(groupmember) {
+      GroupMemberService.delete(groupmember.gm_ID)
+        .then(() => {  
+          this.groupMembers = this.groupMembers.filter(groupMember => groupMember.gm_ID!=groupmember.gm_ID);
+        })
+        .catch(error => {
+            this.message = error.response.data.message;
+        });
     },
 
-    addNewMember() {
-        this.$router.push({ name: 'personadd' });
-    },
-
-    addPersonForFamily(familyPerson) {
-        FamilyPersonService.create(familyPerson)
+    addMemberForGroup() {
+        this.dialog = false
+        let groupMember = {};
+        groupMember.grp_ID = this.currentGroup.grp_ID;
+        groupMember.per_ID = this.groupMember.per_ID;
+        groupMember.grp_role = this.groupMember.grp_role;
+        console.log(groupMember)
+        GroupMemberService.create(groupMember)
           .then(() => {
+                this.getPeopleForGroup(this.$route.params.id);
+                console.log(this.groupMembers);
           })
           .catch(error => {
               this.message = error.response.data.message;
           });
-    },
-
-    addPersonForTable() {
-      this.dialog = false;
-      let familyPerson = {};
-      familyPerson.per_ID = this.familyPerson.per_ID;
-      familyPerson.fam_role = this.familyPerson.fam_role;
-
-      PersonDataService.get(this.familyPerson.per_ID)
-        .then(response => {
-          familyPerson.person = response.data;
-          console.log(familyPerson)
-          this.familyPersons.push(familyPerson)
-          this.familyPerson = {};
-        })
-        .catch(e => {
-          console.log(e);
-        });
-      
+           
     },
     close () {
         this.dialog = false
-    },
+      },
+
     customFilter (item, queryText) {
       const textOne = item.frst_name.toLowerCase()
       const textTwo = item.last_name.toLowerCase()
@@ -284,25 +265,25 @@ export default {
 
       return textOne.indexOf(searchText) > -1 ||
         textTwo.indexOf(searchText) > -1
-    },
-
+    }
   },
   mounted() {
     this.message = '';
+    this.getGroup(this.$route.params.id);
+    this.getPeopleForGroup(this.$route.params.id);
     this.getPeople();
   }
 };
 </script>
 
 <style>
-.submit-form {
-  max-width: 500px;
-  margin: auto;
-  font-size: 20px;
-}
-
-
-h1 {
+h4 {
+  font-size: 25px;
   text-align: center;
+}
+.edit-form {
+  max-width: 600px;
+  max-height: 900px;
+  margin: auto;
 }
 </style>
