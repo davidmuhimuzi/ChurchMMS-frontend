@@ -75,7 +75,7 @@
 
     <footer class="footer">
       <h3>Wilshire Church of Christ</h3>
-      <h8>400 East Wilshire Blvd. Oklahoma City, OK 73105</h8>
+      <h6>400 East Wilshire Blvd. Oklahoma City, OK 73105</h6>
       <p>405.843.9124</p>
       <p>Copyright &copy;2021</p>
 
